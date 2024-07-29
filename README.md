@@ -168,7 +168,8 @@ storageClasses:
       node-publish-secret:
       controller-expand-secret:
 
-volumeSnapshotClasses: []
+volumeSnapshotClasses:
+  - name: freenas-iscsi-csi
 
 driver:
   config:

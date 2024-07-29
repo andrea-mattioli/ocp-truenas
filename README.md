@@ -346,9 +346,9 @@ This process ensures that the PVC is completely removed from OpenShift and that 
 
    This ensures that the storage profile is properly configured to use the desired access modes and volume mode.
 
-   ### Networking Setup
+### Network Setup
 
-On your nodes, you have only one network interface `eno1`. You've encountered issues with setting up a Linux bridge on this interface, and you're unsure if the problem has been resolved in a recent bugzilla report. As an alternative, you've created VLAN interfaces and corresponding bridges. Below is the configuration used for the `NodeNetworkConfigurationPolicy` and the `NetworkAttachmentDefinitions`.
+On my nodes, I only have one network interface, `eno1`. I tried to create a Linux bridge on that interface but was unsuccessful. I also found this [Bugzilla](https://bugzilla.redhat.com/show_bug.cgi?id=1885605) report but didn't understand if it has been resolved in any way. The only alternative I found was to create a eno1.vlan interface and, consequently, a bridge on top of the VLAN interface. Below is the configuration used for the `NodeNetworkConfigurationPolicy` and the `NetworkAttachmentDefinitions`.
 
 #### Node Network Configuration Policy
 
@@ -398,7 +398,7 @@ nodeSelector:
 
 #### Network Attachment Definitions
 
-You created two `NetworkAttachmentDefinitions` to associate with the bridges `br13` and `br14`. Here are the configurations for these definitions:
+I created two `NetworkAttachmentDefinitions` to associate with the bridges `br13` and `br14`. Here are the configurations for these definitions:
 
 ```yaml
 apiVersion: v1
@@ -432,7 +432,7 @@ metadata:
 
 These `NetworkAttachmentDefinitions` will be associated with the NICs of the VMs.
 
-### Next Steps
+#### END Netowork Steps
 
 1. **Verify Configuration:**
    - Ensure that the VLAN interfaces (`eno1.13`, `eno1.14`) and bridges (`br13`, `br14`) are up and properly configured on your nodes.
@@ -441,11 +441,10 @@ These `NetworkAttachmentDefinitions` will be associated with the NICs of the VMs
    - Verify that the `NetworkAttachmentDefinitions` are correctly applied in the `virtualmachines` namespace.
 
 3. **Check VM Connectivity:**
-   - Attach these networks to your VMs and ensure they can communicate through the VLANs as expected.
+   - Attach these networks to your VMs and ensure they can communicate through the VLANs as expected if you have already provisioned one.
 
-Feel free to adjust the configurations as needed based on your specific network setup and requirements.
 
-### Migration of VMs from RHV to OpenShift Virtualization
+## Migration of VMs from RHV to OpenShift Virtualization
 
 #### 1. **Create a Service Account and Assign Cluster-Admin Role**
 

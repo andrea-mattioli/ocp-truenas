@@ -1,8 +1,25 @@
 # HOMELAB TrueNAS Scale - Openshift Virtualization
 
+This is not an official guide but rather a collection of steps I used to migrate the workloads from my home lab from RHV to OpenShift Virtualization.
+
+Here is the hardware I used:
+
+| **Specification**   | **Host 1**                                 | **Host 2**                                 | **Host 3**                                 | **Storage**                                 |
+|---------------------|--------------------------------------------|--------------------------------------------|--------------------------------------------|--------------------------------------------|
+| **Model**           | ThinkCentre M900                          | ThinkCentre M900                          | ThinkCentre M700                          | ProLiant MicroServer Gen10                 |
+| **CPU Model**       | Intel(R) Core(TM) i7-6700T CPU @ 2.80GHz  | Intel(R) Core(TM) i7-6700T CPU @ 2.80GHz  | Intel(R) Core(TM) i7-6700T CPU @ 2.80GHz  | AMD Opteron(tm) X3216 APU                  |
+| **CPU Cores**       | 8                                          | 8                                          | 8                                          | 2                                          |
+| **RAM**             | 32GB                                        | 32GB                                        | 32GB                                        | 32GB                                  |
+| **Disk**            | 256G                | 256G                  | 256G                  | 256G                              |
+
+
+---
+
+## Install TrueNas Scale
+
 Follow the official guide to install TrueNAS Scale: [TrueNAS Scale Install Guide](https://www.truenas.com/docs/scale/24.04/gettingstarted/install/installingscale/)
 
-By default, TrueNAS uses the entire disk for the operating system and does not allow its use for other purposes. However, during the installation phase, you can specify to use only 60GB + the swap partition as follows:
+By default, TrueNAS uses the entire disk for the operating system and does not allow its use for other purposes. However, during the installation phase, you can specify to use only 64GB + the swap partition as follows:
 
 1. When the installer GUI shows up, choose the `[]shell` option from the 4 available.
 2. We're going to adjust the installer script:
@@ -98,6 +115,8 @@ I also created another zpool called `ocp-virt` on a 2TB disk to be used with the
 ocp-virt/k8s/b/v
 In this case, it is 16 characters.
 
+---
+
 ## Installing the CSI Driver
 
 Create the CSI user credential – `Local Users -> ADD`:
@@ -119,14 +138,14 @@ Enable and configure the ISCSI service:
 4. Create a dummy target to prevent [this issue](https://github.com/democratic-csi/democratic-csi/issues/412)
 ![image](https://github.com/user-attachments/assets/96989e82-87d4-4523-be7a-a425da57024c)
 
-Install the driver on OpenShift using helm:
-```bash
-sudo curl -L https://mirror.openshift.com/pub/openshift-v4/clients/helm/latest/helm-linux-amd64 -o /usr/local/bin/helm
-sudo chmod +x /usr/local/bin/helm
-helm repo add democratic-csi https://democratic-csi.github.io/charts/
-helm repo update
-helm search repo democratic-csi/
-```
+5. Install the driver on OpenShift using helm:   
+  ```bash
+  sudo curl -L https://mirror.openshift.com/pub/openshift-v4/clients/helm/latest/helm-linux-amd64 -o /usr/local/bin/helm
+  sudo chmod +x /usr/local/bin/helm
+  helm repo add democratic-csi https://democratic-csi.github.io/charts/
+  helm repo update
+  helm search repo democratic-csi/
+  ```
 
 Create the `freenas-iscsi.yaml` file:
 ```yaml
@@ -193,7 +212,6 @@ driver:
       extentRpm: "SSD"
       extentAvailThreshold: 0
 ```
----
 
 If everything has worked correctly, you will find a project named `democratic-csi` in OpenShift. To test it, you can create a new project and try to create a PVC:
 
@@ -224,15 +242,9 @@ NAME   STATUS   VOLUME                                     CAPACITY   ACCESS MOD
 test   Bound    pvc-38373434-9983-4603-90d2-f0d51296fcd2   1Gi        RWX            freenas-iscsi-csi   <unset>                 88s
 ```
 
----
-
 This setup verifies that the Persistent Volume Claim (PVC) was created successfully and is bound to a volume with the expected specifications.
 
 Here's how to verify the correct removal of the Persistent Volume Claim (PVC) from OpenShift and TrueNAS:
-
----
-
-To verify the successful removal of the PVC from OpenShift:
 
 ```bash
 [amattiol@amattiol-laptop ~]$ oc delete pvc test
@@ -241,8 +253,6 @@ persistentvolumeclaim "test" deleted
 [amattiol@amattiol-laptop ~]$ oc get pvc
 No resources found in test-pvc namespace.
 ```
-
----
 
 **Note:** Make sure to check TrueNAS to confirm that the corresponding volume has been removed as well.
 
@@ -264,7 +274,7 @@ This process ensures that the PVC is completely removed from OpenShift and that 
 
 ---
 
-### Preparation for OpenShift Virtualization
+## Preparation for OpenShift Virtualization
 
 1. **Create a New Project:**
    - For example, create a project named `virtualmachines`.
